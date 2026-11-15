@@ -1,0 +1,39 @@
+name: Render Instagram Card News
+
+on:
+  push:
+    paths:
+      - 'data/slides.json'
+      - 'scripts/render.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-cards:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Korean fonts and Pillow
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk
+          python3 -m pip install --upgrade pip pillow
+
+      - name: Render PNG slides
+        run: python3 scripts/render.py
+
+      - name: Commit and push generated PNGs
+        run: |
+          git config user.name "deepdig-bot"
+          git config user.email "bot@deepdig.local"
+          git add posts/
+          if ! git diff --cached --quiet; then
+            git commit -m "Auto-render card news PNGs [skip ci]"
+            git push
+          else
+            echo "No image changes to commit"
+          fi
